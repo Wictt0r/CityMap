@@ -1,0 +1,4 @@
+popa bsfs 150  5kiosheta 1000
+bsfs popa 150
+5kiosheta ndk 400
+ndk popa 800

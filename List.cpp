@@ -60,7 +60,7 @@ void List::pop_back()
 	last->next = nullptr;
 }
 
-bool List::is_connected(const std::string& _name) const
+bool List::has_member(const std::string& _name) const
 {
 	if (first == nullptr)
 		return false;
@@ -89,13 +89,23 @@ int List::distance_between(const std::string& _name) const
 void List::print() const
 {
 	std::cout << first->name << ": ";
+	print_neightbours();
+	std::cout << std::endl;
+}
+
+void List::print_neightbours() const
+{
 	Node* current = first->next;
 	while (current != nullptr)
 	{
 		std::cout << '(' << current->name << ',' << current->weight << ") ";
-		current=current->next;
+		current = current->next;
 	}
-	std::cout << std::endl;
+}
+
+std::string List::name() const
+{
+	return std::string(first->name);
 }
 
 void List::copy(const List& other)

@@ -17,9 +17,11 @@ public:
 
 	void push_back(std::string, int);
 	void pop_back();
-	bool is_connected(const std::string&)const;//does not count first member
+	bool has_member(const std::string&)const;//does not count first member
 	int distance_between(const std::string&)const;
 	void print()const;
+	void print_neightbours()const;
+	std::string name()const;
 
 private:
 	struct Node
