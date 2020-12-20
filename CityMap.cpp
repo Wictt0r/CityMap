@@ -1,6 +1,7 @@
 #include "CityMap.h"
 
 #include<fstream>
+#include<stack>
 
 CityMap::CityMap():graph(),closed_intersections(),current(nullptr)
 {
@@ -41,11 +42,10 @@ void CityMap::read_from_file(const std::string& file_name)
 		add_new_connection(name);
 		while (file.good() && file.peek()!='\n')//look untill end of line
 		{
-			
 			std::string intersection_name;
 			int weight;
 			file >> intersection_name >> weight;
-			add_connection(name, intersection_name, weight);
+			graph[graph.size() - 1].push_back(intersection_name, weight);
 			if ((bool)file == false)
 			{
 				throw std::logic_error("Invalid input");
@@ -104,6 +104,28 @@ void CityMap::open_intersection(const std::string& _name)
 	std::cout << "No such closed intersection\n";
 }
 
+bool CityMap::are_connected(const std::string& source, const std::string& destination) const
+{
+	std::vector<std::string> visited;
+	std::stack<std::string> st;
+	st.push(source);
+	while (!st.empty() && st.top()!=destination)
+	{
+		std::string stack_top = st.top();
+		visited.push_back(stack_top);
+		st.pop();
+		List list = find_intersection(stack_top);
+		for (int i=0;i<list.get_connections_count();++i)
+		{
+			if (!has_member(visited,list[i].first))
+			{
+				st.push(list[i].first);
+			}
+		}
+	}
+	return !st.empty();
+}
+
 
 void CityMap::print() const
 {
@@ -136,18 +158,30 @@ void CityMap::add_connection(const std::string& source, const std::string& desti
 	{
 		if (it.name() == source)
 		{
-			if (it.has_member(destination) == false)
-			{
-				it.push_back(destination, weight);
-			}
-			else
-			{
-				throw std::logic_error("Connection already exists");
-			}
+			it.push_back(destination, weight);
 			break;
 		}
 
 	}
+}
+
+List CityMap::find_intersection(const std::string&_name) const
+{
+	for (const List &it : graph)
+	{
+		if (it.name() == _name)
+			return it;
+	}
+}
+
+bool CityMap::has_member(std::vector<std::string> arr,const std::string&_word) const
+{
+	for (std::string it : arr)
+	{
+		if (it == _word)
+			return true;
+	}
+	return false;
 }
 
 void CityMap::copy(const CityMap& other)

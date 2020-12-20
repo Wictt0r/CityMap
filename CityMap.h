@@ -40,6 +40,10 @@ private:
 	std::vector<std::string> closed_intersections;
 	List* current;
 
+	List find_intersection(const std::string&)const;
+	bool has_member(std::vector<std::string>,const std::string&)const;//is there a member with that name
+
+
 	void copy(const CityMap&);
 	void del();
 };

@@ -10,6 +10,7 @@ int main()
 	{
 		map.read_from_file("test.txt");
 		map.print();
+		std::cout<<map.are_connected("popa", "ndk");
 	}
 	catch (std::logic_error err)
 	{

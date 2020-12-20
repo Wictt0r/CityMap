@@ -1,8 +1,8 @@
 #include "List.h"
 
-List::List():first(nullptr),last(nullptr){}
+//List::List():first(nullptr),last(nullptr),connections_count(0){}
 
-List::List(const std::string& _name)
+List::List(const std::string& _name):connections_count(0)
 {
 	first = last = new(std::nothrow)Node(_name,0);
 	if (first == nullptr)
@@ -31,6 +31,10 @@ List& List::operator=(const List& other)
 
 void List::push_back(std::string _name, int _weight)
 {
+	if (has_member(_name))
+	{
+		throw std::logic_error("Connection already exists");
+	}
 	Node* temp= new (std::nothrow)Node(_name, _weight);
 	if (temp == nullptr)
 		throw std::bad_alloc();
@@ -42,6 +46,7 @@ void List::push_back(std::string _name, int _weight)
 	}
 	last->next = temp;
 	last = last->next;
+	++connections_count;
 }
 
 void List::pop_back()
@@ -58,6 +63,7 @@ void List::pop_back()
 	delete last;
 	last = current;
 	last->next = nullptr;
+	--connections_count;
 }
 
 bool List::has_member(const std::string& _name) const
@@ -108,6 +114,25 @@ std::string List::name() const
 	return std::string(first->name);
 }
 
+int List::get_connections_count() const
+{
+	return connections_count;
+}
+
+std::pair<std::string, int> List::operator[](const int& _postion) const
+{
+	if (_postion < 0 || _postion>connections_count-1)
+		throw std::out_of_range("Invalid element");
+	int postion = _postion;
+	Node* current = first->next;//first element is the name of the list
+	while (postion > 0)
+	{
+		current = current->next;
+		--postion;
+	}
+	return std::pair<std::string, int>(current->name,current->weight);
+}
+
 void List::copy(const List& other)
 {
 	first = new(std::nothrow) Node(other.first);
@@ -126,6 +151,7 @@ void List::copy(const List& other)
 		other_current = other_current->next;
 	}
 	last = current;
+	connections_count = other.connections_count;
 }
 
 void List::del()

@@ -8,7 +8,7 @@
 class List
 {
 public:
-	List();
+//	List();
 	List(const std::string&);
 	List(const List&);
 	~List();
@@ -22,6 +22,8 @@ public:
 	void print()const;
 	void print_neightbours()const;
 	std::string name()const;
+	int get_connections_count()const;
+	std::pair<std::string, int> operator[](const int&)const;
 
 private:
 	struct Node
@@ -40,6 +42,8 @@ private:
 	};
 	Node* first;
 	Node* last;
+
+	int connections_count;//does not count first elem
 
 	void copy(const List&);
 	void del();
