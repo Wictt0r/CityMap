@@ -30,10 +30,14 @@ public:
 	bool can_current_reach_all_other()const;
 	bool are_connected(const std::string&, const std::string&)const;//are 2 locations connected
 	void print()const;
-	void print_all_dead_ends();
-
+	void print_all_dead_ends() const;
+	void detect_function(const std::vector<std::string>&);
 	void add_new_connection(const std::string&);//create new Intersection
 	void add_connection(const std::string&, const std::string&,const int&);//add a connection from source to destination
+	void interactive_mode();
+
+	static std::vector<std::string> split_input(std::string);
+
 
 private:
 

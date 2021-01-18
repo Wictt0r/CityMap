@@ -107,6 +107,7 @@ void List::print_neightbours() const
 		std::cout << '(' << current->name << ',' << current->weight << ") ";
 		current = current->next;
 	}
+	std::cout << '\n';
 }
 
 std::string List::name() const

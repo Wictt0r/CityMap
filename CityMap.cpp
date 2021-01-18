@@ -32,7 +32,7 @@ void CityMap::read_from_file(const std::string& file_name)
 	std::ifstream file(file_name);
 	if (file.is_open() == false)
 	{
-		//TODO
+		throw std::logic_error("Could not load map from file\n");
 		return;
 	}
 	while (file.good())
@@ -50,7 +50,7 @@ void CityMap::read_from_file(const std::string& file_name)
 			add_intersection(intersection_name);
 			if ((bool)file == false)
 			{
-				throw std::logic_error("Invalid input");
+				throw std::logic_error("Invalid file input");
 			}
 		}
 	}
@@ -59,11 +59,12 @@ void CityMap::read_from_file(const std::string& file_name)
 
 void CityMap::print_current_intersection() const
 {
-	std::cout << current->name();
+	std::cout <<"Current intersection is:"<< current->name()<<'\n';
 }
 
 void CityMap::print_current_neightbours() const
 {
+	std::cout << "Current neighbours are:\n";
 	current->print_neightbours();
 }
 
@@ -74,9 +75,11 @@ void CityMap::change_current_intersection(const std::string& name)
 		if (it.name() == name)
 		{
 			current = &it;
-			break;
+			std::cout << "Current intersection is now: " << it.name() << std::endl;
+			return;
 		}
 	}
+	throw std::logic_error("No such intersection\n");
 }
 
 void CityMap::move_current_intersection(const std::string& destination)
@@ -90,6 +93,7 @@ void CityMap::move_current_intersection(const std::string& destination)
 	find_all_paths(current->name(), destination, std::vector<std::string>(),current->name() ,0, paths);//call with source, destination, empty vector, source,0,empty vector
 	sort_paths(paths);
 	std::cout << paths[0].first << std::endl;//after sort paths[0] is the fastest path
+	current = &find_intersection(destination);
 }
 
 void CityMap::print_all_closed_intersections() const
@@ -103,7 +107,13 @@ void CityMap::print_all_closed_intersections() const
 
 void CityMap::close_intersection(const std::string& _name)
 {
-	closed_intersections.push_back(_name);
+	if (has_member(all_intersections, _name))
+	{
+		closed_intersections.push_back(_name);
+		return;
+	}
+	std::cout << "No such closed intersection\n";
+	
 }
 
 void CityMap::open_intersection(const std::string& _name)
@@ -246,6 +256,8 @@ bool CityMap::are_connected(const std::string& source, const std::string& destin
 		visited.push_back(stack_top);
 		st.pop();
 		List list = find_intersection(stack_top);
+		if (list.name() == "")
+			return false;
 		for (int i=0;i<list.get_connections_count();++i)
 		{
 			if (!has_member(visited,list[i].first))
@@ -265,25 +277,62 @@ void CityMap::print() const
 	}
 }
 
-void CityMap::print_all_dead_ends()
+void CityMap::print_all_dead_ends() const
 {
-	for (std::string it : all_intersections)
+	for (const std::string it : all_intersections)
 	{
-		bool flag = false;
-		for(List i : graph)
-		{
-			if (i.name() == it)
-			{
-				flag = true;
-				break;
-			}
-		}
-		if (flag == false)
-		{
+		if (find_intersection(it).name() == "")
 			std::cout << it << " is a dead end\n";
-		}
 	}
 	return;
+}
+
+void CityMap::detect_function(const std::vector<std::string>& split_input)
+{
+		const size_t input_word_count = split_input.size();
+
+		if (input_word_count == 1 && split_input[0] == "location")
+		{
+			print_current_intersection();
+			return;
+		}
+		if (input_word_count == 2 && split_input[0] == "change")
+		{
+			change_current_intersection(split_input[1]);
+			return;
+		}
+		if (input_word_count == 1 && split_input[0] == "neighbours")
+		{
+			print_current_neightbours();
+			return;
+		}
+		if (input_word_count == 2 && split_input[0] == "move")
+		{
+			move_current_intersection(split_input[1]);
+			return;
+		}
+		if (input_word_count == 2 && split_input[0] == "close")
+		{
+			close_intersection(split_input[1]);
+			return;
+		}
+		if (input_word_count == 2 && split_input[0] == "open")
+		{
+			open_intersection(split_input[1]);
+			return;
+		}
+		if (input_word_count == 1 && split_input[0] == "closed")
+		{
+			print_all_closed_intersections();
+			return;
+		}
+		if (input_word_count == 1 && split_input[0] == "tour")
+		{
+			print_tour();
+			return;
+		}
+
+		std::cout << "Invalid command\n";
 }
 
 void CityMap::add_new_connection(const std::string& _name)
@@ -314,6 +363,45 @@ void CityMap::add_connection(const std::string& source, const std::string& desti
 		}
 
 	}
+}
+
+void CityMap::interactive_mode()
+{
+	std::string input;
+	do
+	{
+		try
+		{
+			std::getline(std::cin, input);
+			detect_function(split_input(input)); 
+		}
+		catch (std::logic_error err)
+		{
+			std::cout << err.what();
+		}
+		catch (std::bad_alloc())
+		{
+			std::cout << "Bad memmory allocation\n";
+		}
+	} 
+	while (input!="end");
+}
+
+std::vector<std::string> CityMap::split_input(std::string input)
+{
+	std::vector<std::string> split_input;
+	int pos = 0;
+	size_t length = input.find_first_of(" \n");
+	while (pos!=std::string::npos)
+	{
+		split_input.push_back(input.substr(pos, length));
+		pos = input.find_first_of(" \n", pos+1)+1;
+		if (pos == 0)
+			pos = std::string::npos;
+		length = input.find_first_of(" \n", pos+1) - pos;
+		
+	}
+	return split_input;
 }
 
 List CityMap::find_intersection(const std::string&_name) const
