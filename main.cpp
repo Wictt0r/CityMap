@@ -9,9 +9,8 @@ int main()
 	try
 	{
 		map.read_from_file("test.txt");
-		//map.print();
 		map.change_current_intersection("popa");
-		map.print_tour();
+		map.print_all_dead_ends();
 	}
 	catch (std::logic_error err)
 	{

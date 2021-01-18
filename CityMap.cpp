@@ -265,6 +265,27 @@ void CityMap::print() const
 	}
 }
 
+void CityMap::print_all_dead_ends()
+{
+	for (std::string it : all_intersections)
+	{
+		bool flag = false;
+		for(List i : graph)
+		{
+			if (i.name() == it)
+			{
+				flag = true;
+				break;
+			}
+		}
+		if (flag == false)
+		{
+			std::cout << it << " is a dead end\n";
+		}
+	}
+	return;
+}
+
 void CityMap::add_new_connection(const std::string& _name)
 {
 	for (List it : graph)
