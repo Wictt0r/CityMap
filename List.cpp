@@ -95,11 +95,11 @@ int List::distance_between(const std::string& _name) const
 void List::print() const
 {
 	std::cout << first->name << ": ";
-	print_neightbours();
+	print_neighbours();
 	std::cout << std::endl;
 }
 
-void List::print_neightbours() const
+void List::print_neighbours() const
 {
 	Node* current = first->next;
 	while (current != nullptr)

@@ -20,7 +20,7 @@ public:
 	bool has_member(const std::string&)const;//does not count first member
 	int distance_between(const std::string&)const;
 	void print()const;
-	void print_neightbours()const;
+	void print_neighbours()const;
 	std::string name()const;
 	int get_connections_count()const;
 	std::pair<std::string, int> operator[](const int&)const;

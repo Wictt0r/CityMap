@@ -39,17 +39,17 @@ void CityMap::read_from_file(const std::string& file_name)
 	{
 		std::string name;
 		file >> name;
-		add_intersection(name);
 		add_new_connection(name);
 		while (file.good() && file.peek()!='\n')//look untill end of line
 		{
 			std::string intersection_name;
 			int weight;
 			file >> intersection_name >> weight;
-			graph[graph.size() - 1].push_back(intersection_name, weight);
-			add_intersection(intersection_name);
+			find_intersection(name)->push_back(intersection_name, weight);
+			add_new_connection(intersection_name);
 			if ((bool)file == false)
 			{
+				file.close();
 				throw std::logic_error("Invalid file input");
 			}
 		}
@@ -65,7 +65,7 @@ void CityMap::print_current_intersection() const
 void CityMap::print_current_neightbours() const
 {
 	std::cout << "Current neighbours are:\n";
-	current->print_neightbours();
+	current->print_neighbours();
 }
 
 void CityMap::change_current_intersection(const std::string& name)
@@ -93,11 +93,17 @@ void CityMap::move_current_intersection(const std::string& destination)
 	find_all_paths(current->name(), destination, std::vector<std::string>(),current->name() ,0, paths);//call with source, destination, empty vector, source,0,empty vector
 	sort_paths(paths);
 	std::cout << paths[0].first << std::endl;//after sort paths[0] is the fastest path
-	current = &find_intersection(destination);
+	current = find_intersection(destination);
 }
 
 void CityMap::print_all_closed_intersections() const
 {
+	if (closed_intersections.size() == 0)
+	{
+		std::cout << "No closed intersections\n";
+		return;
+	}
+	std::cout << "Closed intersections are:";
 	for (std::string it : closed_intersections)
 	{
 		std::cout << it << ' ';
@@ -107,12 +113,16 @@ void CityMap::print_all_closed_intersections() const
 
 void CityMap::close_intersection(const std::string& _name)
 {
-	if (has_member(all_intersections, _name))
+	for(List it : graph)
 	{
-		closed_intersections.push_back(_name);
-		return;
+		if (it.name() == _name)
+		{
+			closed_intersections.push_back(_name);
+			std::cout << _name << " closed\n";
+			return;
+		}
 	}
-	std::cout << "No such closed intersection\n";
+	std::cout << "No such intersection\n";
 	
 }
 
@@ -123,13 +133,14 @@ void CityMap::open_intersection(const std::string& _name)
 		if (closed_intersections[i] == _name)
 		{
 			closed_intersections.erase(closed_intersections.begin() + i);
+			std::cout << _name << " opened\n";
 			return;
 		}
 	}
 	std::cout << "No such closed intersection\n";
 }
 
-void CityMap::print_three_fastest_routes(const std::string& source, const std::string& destination) const
+void CityMap::print_three_fastest_routes(const std::string& source, const std::string& destination) 
 {
 	if (!are_connected(source, destination))
 		std::cout << "There is no path between " << source << " and " << destination << std::endl;
@@ -151,7 +162,7 @@ void CityMap::print_three_fastest_routes(const std::string& source, const std::s
 
 }
 
-void CityMap::print_three_alternate_routes(const std::string& source, const std::string& destination) const
+void CityMap::print_three_alternate_routes(const std::string& source, const std::string& destination) 
 {
 	if (!are_connected(source, destination))
 		std::cout << "There is no path between " << source << " and " << destination << std::endl;
@@ -165,21 +176,24 @@ void CityMap::print_three_alternate_routes(const std::string& source, const std:
 	}
 	while (paths_count > 0)
 	{
-		bool flag = false;
-		for (const std::string& it : closed_intersections)
-		{
-			if (paths[i].first.find(it) != -1)
-				flag = true;
-		}
-		if (flag == true)
-			continue;
-		if (i > paths.size())
+		if (i >= paths.size())
 		{
 			if (paths_count == 3)
 				std::cout << "There are no open paths\n";
 			else
-				std::cout << "There are no more paths\n" ;
+				std::cout << "There are no more open	paths\n";
 			break;
+		}
+		bool has_closed_intersection = false;
+		for (const std::string& it : closed_intersections)
+		{
+			if (paths[i].first.find(it) != std::string::npos)
+				has_closed_intersection = true;
+		}
+		if (has_closed_intersection == true)
+		{
+			++i;
+			continue;
 		}
 		std::cout << paths[i].first << " distance: " << paths[i].second << std::endl;
 		++i;
@@ -187,7 +201,7 @@ void CityMap::print_three_alternate_routes(const std::string& source, const std:
 	}
 }
 
-void CityMap::print_tour() const
+void CityMap::print_tour()
 {
 	for (List source : graph)
 	{
@@ -202,11 +216,16 @@ void CityMap::print_tour() const
 				for (std::pair<std::string, int> path : paths)
 				{
 					bool has_all_locations = true;
-					for(std::string intersection : all_intersections)
-						if (path.first.find(intersection) == -1)
+					for (List intersection : graph)
+					{
+						if ((has_member(closed_intersections, intersection.name()) == true && //if the intersection is closed make sure it isnt in the path
+							path.first.find(intersection.name()) != std::string::npos)||
+							path.first.find(intersection.name()) == std::string::npos)
 						{
 							has_all_locations = false;
+							break;
 						}
+					}
 					if (has_all_locations == true)
 					{
 						std::cout << "The tour is:" << path.first<<"->"<< source.name() << std::endl;
@@ -220,7 +239,7 @@ void CityMap::print_tour() const
 	std::cout << "No possible tour\n";
 }
 
-bool CityMap::can_partially_tour_from_current() const
+bool CityMap::can_partially_tour_from_current()
 {
 	for (List it : graph)
 	{
@@ -232,20 +251,20 @@ bool CityMap::can_partially_tour_from_current() const
 	return false;
 }
 
-bool CityMap::can_current_reach_all_other() const
+bool CityMap::can_current_reach_all_other() 
 {
-	for (std::string it : all_intersections)
+	for (List it : graph)
 	{
-		if (it != current->name())
+		if (it.name() != current->name())
 		{
-			if (!are_connected(current->name(), it))
+			if (!are_connected(current->name(), it.name()))
 				return false;
 		}
 	}
 	return true;
 }
 
-bool CityMap::are_connected(const std::string& source, const std::string& destination) const
+bool CityMap::are_connected(const std::string& source, const std::string& destination)
 {
 	std::vector<std::string> visited;
 	std::stack<std::string> st;
@@ -255,14 +274,14 @@ bool CityMap::are_connected(const std::string& source, const std::string& destin
 		std::string stack_top = st.top();
 		visited.push_back(stack_top);
 		st.pop();
-		List list = find_intersection(stack_top);
-		if (list.name() == "")
+		List* list = find_intersection(stack_top);
+		if (list->name() == "")
 			return false;
-		for (int i=0;i<list.get_connections_count();++i)
+		for (int i=0;i<list->get_connections_count();++i)
 		{
-			if (!has_member(visited,list[i].first))
+			if (!has_member(visited,(*list)[i].first))
 			{
-				st.push(list[i].first);
+				st.push((*list)[i].first);
 			}
 		}
 	}
@@ -279,10 +298,10 @@ void CityMap::print() const
 
 void CityMap::print_all_dead_ends() const
 {
-	for (const std::string it : all_intersections)
+	for (List it : graph)
 	{
-		if (find_intersection(it).name() == "")
-			std::cout << it << " is a dead end\n";
+		if (it.get_connections_count() == 0)
+			std::cout << it.name() << " is a dead end\n";
 	}
 	return;
 }
@@ -331,7 +350,28 @@ void CityMap::detect_function(const std::vector<std::string>& split_input)
 			print_tour();
 			return;
 		}
+		if (input_word_count == 2 && split_input[0] == "partial" && split_input[1] == "tour")
+		{
+			std::cout << (can_partially_tour_from_current() ? "It is possible\n" : "It isn't possible\n");
+			return;
+		}
+		if (input_word_count == 2 && split_input[0] == "reach" && split_input[1] == "all")
+		{
+			std::cout << (can_current_reach_all_other() ? "It is possible\n" : "It isn't possible\n");
+			return;
+		}
+		if (input_word_count == 2 && split_input[0] == "paths")
+		{
+			print_three_fastest_routes(current->name(), split_input[1]);
+			return;
+		}
+		if (input_word_count == 2 && split_input[0] == "alternate")
+		{
+			print_three_alternate_routes(current->name(), split_input[1]);
+			return;
+		}
 
+		if (input_word_count != 1 || split_input[0] != "end")
 		std::cout << "Invalid command\n";
 }
 
@@ -341,8 +381,7 @@ void CityMap::add_new_connection(const std::string& _name)
 	{
 		if (it.name() == _name)
 		{
-			throw std::logic_error("connection already exists");
-			break;
+			return;
 		}
 	}
 	graph.push_back(List(_name));
@@ -389,6 +428,7 @@ void CityMap::interactive_mode()
 
 std::vector<std::string> CityMap::split_input(std::string input)
 {
+	remove_space(input);
 	std::vector<std::string> split_input;
 	int pos = 0;
 	size_t length = input.find_first_of(" \n");
@@ -404,36 +444,33 @@ std::vector<std::string> CityMap::split_input(std::string input)
 	return split_input;
 }
 
-List CityMap::find_intersection(const std::string&_name) const
+List* CityMap::find_intersection(const std::string&_name)
 {
-	for (const List &it : graph)
+	for (List &it : graph)
 	{
 		if (it.name() == _name)
-			return it;
+			return &it;
 	}
-	return List("");
+	return nullptr;
 }
 
-void CityMap::find_all_paths(std::string source, std::string destination, std::vector<std::string> visited,std::string path, int weight, std::vector<std::pair<std::string, int>>& result)const
+void CityMap::find_all_paths(std::string source, std::string destination, std::vector<std::string> visited,std::string path, int weight, std::vector<std::pair<std::string, int>>& result)
 {
-	static std::vector<std::pair<std::string, int>> paths;
 	if (source == destination)
 	{
-		paths.push_back(std::pair<std::string, int>(path, weight));
+		result.push_back(std::pair<std::string, int>(path, weight));
 		return;
 	}
-	List current=find_intersection(source);
+	List* current=find_intersection(source);
 	visited.push_back(source);
-	for (int i = 0; i < current.get_connections_count(); ++i)
+	for (int i = 0; i < current->get_connections_count(); ++i)
 	{
-		if(!has_member(visited,current[i].first))
+		if(!has_member(visited,(*current)[i].first))
 		{ 
-			find_all_paths(current[i].first, destination, visited, path +"->" + current[i].first, weight + current[i].second, result);
+			find_all_paths((*current)[i].first, destination, visited, path +"->" + (*current)[i].first, weight + (*current)[i].second, result);
 		}
 		
 	}
-
-	result = paths;
 	return ;
 }
 
@@ -449,21 +486,93 @@ bool CityMap::has_member(std::vector<std::string> arr,const std::string&_word) c
 
 void CityMap::sort_paths(std::vector<std::pair<std::string, int>>& arr)const
 {
-	
+	arr=MergeSort(arr);
 }
 
-void CityMap::add_intersection(std::string new_intersection)
+void CityMap::remove_space(std::string& str)
 {
-	for (std::string it : all_intersections)
+	for (size_t i = 0; i < str.size(); ++i)
 	{
-		if (it == new_intersection)
-			return;
+		if (str[i] == ' ')
+		{
+			++i;
+			while (i<str.size() && str[i] == ' ')
+			{
+				str.erase(i, 1);
+			}
+		}
 	}
-	all_intersections.push_back(new_intersection);
+}
+
+std::vector<std::pair<std::string, int>> CityMap::MergeSort(std::vector<std::pair<std::string, int>> arr)const
+{
+	if (arr.size()==1)
+	{
+		return arr;
+	}
+	std::vector<std::pair<std::string, int>> first, second;
+	for (size_t i = 0; i < arr.size() / 2; ++i)
+	{
+		first.push_back(arr[i]);
+	}
+	for (size_t i = arr.size()/2; i < arr.size(); ++i)
+	{
+		second.push_back(arr[i]);
+	}
+
+	first=MergeSort(first);
+	second=MergeSort(second);
+
+	 return Merge(first, second);
+}
+
+std::vector<std::pair<std::string, int>> CityMap::Merge(std::vector<std::pair<std::string, int>> first , std::vector<std::pair<std::string, int>> second) const
+{
+	if (first.size() == 0)
+		return second;
+	if (second.size() == 0)
+		return first;
+
+	std::vector<std::pair<std::string, int>> sorted;
+	size_t first_index=0,second_index=0;
+	while (first_index < first.size() && second_index < second.size())
+	{
+		if (first[first_index].second > second[second_index].second)
+		{
+			sorted.push_back(second[second_index]);
+			++second_index;
+		}
+		else
+		{
+			sorted.push_back(first[first_index]);
+			++first_index;
+		}
+	}
+
+	while (first_index < first.size())
+	{
+		sorted.push_back(first[first_index]);
+		++first_index;
+	}
+	while (second_index < second.size())
+	{
+		sorted.push_back(second[second_index]);
+		++second_index;
+	}
+	return sorted;
 }
 
 void CityMap::copy(const CityMap& other)
 {
+	for (List it : other.graph)
+	{
+		graph.push_back(it);
+	}
+	for (std::string it : other.closed_intersections)
+	{
+		graph.push_back(it);
+	}
+	current = find_intersection(other.current->name());
 }
 
 void CityMap::del()
