@@ -24,13 +24,13 @@ public:
 	void close_intersection(const std::string&);
 	void open_intersection(const std::string&);
 	void print_three_fastest_routes(const std::string&, const std::string&);
-	void print_three_alternate_routes(const std::string&,const std::string&);
+	void print_three_alternate_routes(const std::string&,const std::string&,std::vector<std::string>);
 	void print_tour();
 	bool can_partially_tour_from_current();
 	bool can_current_reach_all_other();
 	bool are_connected(const std::string&, const std::string&);//are 2 locations connected
 	void print()const;
-	void print_all_dead_ends() const;
+	void print_all_dead_ends();
 	void detect_function(const std::vector<std::string>&);
 	void add_new_connection(const std::string&);//create new Intersection
 	void add_connection(const std::string&, const std::string&,const int&);//add a connection from source to destination

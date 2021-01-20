@@ -1,4 +1,5 @@
 popa bsfs 150 5kiosheta 1000
-bsfs popa 150 ndk 200
+bsfs popa 150 ndk 200 street 200
 5kiosheta ndk 400
 ndk bsfs 800
+street popa 160

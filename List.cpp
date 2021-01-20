@@ -70,7 +70,7 @@ bool List::has_member(const std::string& _name) const
 {
 	if (first == nullptr)
 		return false;
-	Node* current = first;
+	Node* current = first->next;
 	while (current != nullptr && current->name != _name)
 	{
 		current = current->next;
@@ -96,7 +96,6 @@ void List::print() const
 {
 	std::cout << first->name << ": ";
 	print_neighbours();
-	std::cout << std::endl;
 }
 
 void List::print_neighbours() const
