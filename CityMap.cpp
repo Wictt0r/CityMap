@@ -39,6 +39,8 @@ void CityMap::read_from_file(const std::string& file_name)
 	{
 		std::string name;
 		file >> name;
+		if (name == "")
+			continue;
 		add_new_connection(name);
 		while (file.good() && file.peek()!='\n')//look until end of line
 		{
@@ -52,6 +54,9 @@ void CityMap::read_from_file(const std::string& file_name)
 				file.close();
 				throw std::logic_error("Invalid file input");
 			}
+			char character = file.get();
+			if (character == '\n'|| (character == ' ' && file.peek() == '\n'))
+				break;
 		}
 	}
 	file.close();
@@ -528,6 +533,8 @@ void CityMap::remove_space(std::string& str)
 			}
 		}
 	}
+	if (str.rfind(' ') == (str.size() - 1))
+		str.erase(str.rfind(' '), 1);
 }
 
 std::vector<std::pair<std::string, int>> CityMap::MergeSort(std::vector<std::pair<std::string, int>> arr)const
